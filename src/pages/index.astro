@@ -1,16 +1,360 @@
 ---
-
+import { prompts } from "./prompts";
 ---
 
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Who's First Player?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Who's First Player?</h1>
+
+      <div class="button-wrapper">
+        <div class="pulse-ring" id="pulse-ring"></div>
+        <button id="pick-btn" class="pick-button">
+          <svg class="shuffle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+            <path
+              fill="currentColor"
+              d="M467.8 98.4c12-5 25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64c-9.2 9.2-22.9 11.9-34.9 6.9S448 268.9 448 256v-32h-32c-10.1 0-19.6 4.7-25.6 12.8L358 280l-40-53.3l21.2-28.3c18.1-24.2 46.6-38.4 76.8-38.4h32v-32c0-12.9 7.8-24.6 19.8-29.6M218 360l40 53.3l-21.2 28.3C218.7 465.8 190.2 480 160 480H96c-17.7 0-32-14.3-32-32s14.3-32 32-32h64c10.1 0 19.6-4.7 25.6-12.8zm284.6 174.6c-9.2 9.2-22.9 11.9-34.9 6.9S448 524.9 448 512v-32h-32c-30.2 0-58.7-14.2-76.8-38.4L185.6 236.8c-6-8.1-15.5-12.8-25.6-12.8H96c-17.7 0-32-14.3-32-32s14.3-32 32-32h64c30.2 0 58.7 14.2 76.8 38.4l153.6 204.8c6 8.1 15.5 12.8 25.6 12.8h32v-32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l64 64c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-64 64z"
+            ></path>
+          </svg>
+          <span id="btn-label">Let's Decide</span>
+        </button>
+      </div>
+
+      <div id="prompt-container" class="prompt-container">
+        <p id="prompt-text"></p>
+      </div>
+    </main>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        width: 100%;
+      }
+
+      body {
+        background-color: #5673b3;
+        font-family: "IBM Plex Sans", sans-serif;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+      }
+
+      main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem 1.5rem;
+        width: 100%;
+        max-width: 640px;
+        min-height: 480px;
+      }
+
+      h1 {
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: clamp(2.4rem, 10vw, 4.2rem);
+        font-weight: 700;
+        color: #ffffff;
+        text-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+        margin-bottom: 2.5rem;
+      }
+
+      .button-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 3rem;
+      }
+
+      .pulse-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100%;
+        height: 100%;
+        transform: translate(-50%, -50%);
+        border-radius: 50px;
+        pointer-events: none;
+        opacity: 0;
+      }
+
+      .pulse-ring.active {
+        animation: buttonPulse 0.7s ease-out forwards;
+      }
+
+      @keyframes buttonPulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);
+          opacity: 1;
+        }
+        100% {
+          box-shadow: 0 0 0 30px rgba(255, 255, 255, 0);
+          opacity: 0;
+        }
+      }
+
+      .pick-button {
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: clamp(1.1rem, 4vw, 1.25rem);
+        font-weight: 600;
+        color: #5673b3;
+        background: linear-gradient(135deg, #fffef9 0%, #f5f0e6 100%);
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        cursor: pointer;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.18),
+          0 2px 8px rgba(0, 0, 0, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+        animation: idlePulse 2.5s ease-in-out infinite;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        white-space: nowrap;
+      }
+
+      .shuffle-icon {
+        width: clamp(1.1rem, 4vw, 1.3rem);
+        height: clamp(1.1rem, 4vw, 1.3rem);
+        flex-shrink: 0;
+      }
+
+      .pick-button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transition: left 0.5s ease;
+      }
+
+      .pick-button:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow:
+          0 12px 40px rgba(0, 0, 0, 0.25),
+          0 4px 12px rgba(0, 0, 0, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        animation: none;
+      }
+
+      .pick-button:hover::before {
+        left: 100%;
+      }
+
+      .pick-button:active {
+        transform: translateY(-1px) scale(0.98);
+        box-shadow:
+          0 4px 16px rgba(0, 0, 0, 0.2),
+          0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      @keyframes idlePulse {
+        0%,
+        100% {
+          box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.18),
+            0 2px 8px rgba(0, 0, 0, 0.1),
+            0 0 0 0 rgba(255, 254, 249, 0.4);
+        }
+        50% {
+          box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.18),
+            0 2px 8px rgba(0, 0, 0, 0.1),
+            0 0 0 10px rgba(255, 254, 249, 0);
+        }
+      }
+
+      .prompt-container {
+        width: 100%;
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(10px);
+      }
+
+      .prompt-container.visible {
+        visibility: visible;
+      }
+
+      .prompt-container.fade-in {
+        animation: promptReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+
+      @keyframes promptReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+        }
+        60% {
+          transform: translateY(-4px) scale(1.01);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      #prompt-text {
+        font-size: clamp(1.2rem, 5vw, 1.5rem);
+        font-weight: 600;
+        color: #ffffff;
+        line-height: 1.5;
+        text-align: center;
+        padding: 1.5rem 1rem;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        width: 100%;
+        max-width: 100%;
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 480px) {
+        main {
+          padding: 1.5rem 1rem;
+          min-height: auto;
+        }
+
+        h1 {
+          margin-bottom: 2rem;
+        }
+
+        .button-wrapper {
+          margin-bottom: 2.5rem;
+        }
+
+        .pick-button {
+          padding: 0.9rem 1.6rem;
+        }
+
+        .prompt-container {
+          min-height: 100px;
+        }
+
+        #prompt-text {
+          padding: 1.2rem 1rem;
+        }
+      }
+
+      @media (max-width: 360px) {
+        h1 {
+          font-size: 2rem;
+        }
+
+        .pick-button {
+          padding: 0.8rem 1.4rem;
+          font-size: 1rem;
+        }
+
+        #prompt-text {
+          font-size: 1.1rem;
+          padding: 1rem 0.8rem;
+        }
+      }
+
+      /* Landscape mobile */
+      @media (max-height: 500px) and (orientation: landscape) {
+        main {
+          min-height: auto;
+          padding: 1rem;
+        }
+
+        h1 {
+          font-size: 2rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .button-wrapper {
+          margin-bottom: 1.5rem;
+        }
+
+        .prompt-container {
+          min-height: 80px;
+        }
+      }
+    </style>
+  </body>
 </html>
+
+<script define:vars={{ prompts }}>
+  const button = document.getElementById("pick-btn");
+  const btnLabel = document.getElementById("btn-label");
+  const promptContainer = document.getElementById("prompt-container");
+  const promptText = document.getElementById("prompt-text");
+  const pulseRing = document.getElementById("pulse-ring");
+
+  let hasPickedOnce = false;
+
+  function getRandomPrompt() {
+    const randomIndex = Math.floor(Math.random() * prompts.length);
+    return prompts[randomIndex];
+  }
+
+  button.addEventListener("click", () => {
+    const selectedPrompt = getRandomPrompt();
+
+    // Trigger pulse animation on button
+    pulseRing.classList.remove("active");
+    void pulseRing.offsetWidth;
+    pulseRing.classList.add("active");
+
+    // Add shuffling animation
+    promptContainer.classList.remove("fade-in");
+    void promptContainer.offsetWidth;
+
+    // Update prompt text
+    promptText.textContent = selectedPrompt;
+
+    // Show the container with animation
+    promptContainer.classList.add("visible", "fade-in");
+
+    // Update button text after first pick
+    if (!hasPickedOnce) {
+      hasPickedOnce = true;
+      btnLabel.textContent = "Pick Again";
+    }
+  });
+</script>
